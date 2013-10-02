@@ -6,8 +6,36 @@ from html2text import html2text
 from pprint import pprint
 import os
 import time
+import yaml
 
-INDEX_PATH = "tmp.idx"
+INDEX_PATH = "idx.bin"
+METADATA_PATH = "meta.json"
+POSTS_PATH = "/Users/oleg/design/bookmine/_posts"
+
+
+def parse_all_metainfo(posts_path, save_to=""):
+    res = {}
+    _,_,files = list(os.walk(posts_path))[0]
+    for fp in files:
+        if fp.endswith(".html"):
+            curr_path = os.path.join(posts_path, fp)
+            with open(curr_path, 'r') as r:
+                xx = list(r.readlines())
+                zz = xx[1:xx.index('---\n', 1)]
+                data = yaml.load(''.join(zz))
+                if "book_date" in data:
+                    del(data["book_date"])
+                res[data.get('book_path', 'undefined')] = data
+    if save_to:
+        with open(save_to, 'w') as w:
+            w.write(json.dumps(res))
+    return res
+
+
+def load_all_metainfo(load_from):
+    with open(load_from, 'r') as r:
+        return json.loads(r.read())
+
 
 
 def find_id(document):
@@ -66,9 +94,9 @@ def proc_file(path):
 def mk_index():
     if os.path.exists("dump.txt"):
         os.remove("dump.txt")
-    proc_file("../index1.xhtml")
-    proc_file("../index2.xhtml")
-    proc_file("../index3.xhtml")
+    proc_file("../kalinin/index1.xhtml")
+    proc_file("../kalinin/index2.xhtml")
+    proc_file("../kalinin/index3.xhtml")
 
     # lucifer.addDocument("OLOLO1", "Goethe saw the sea for the first time in his life when he came   ")
 
@@ -79,6 +107,8 @@ def mk_index():
 
 
 def main():
+    zz = parse_all_metainfo(POSTS_PATH, save_to=METADATA_PATH)
+    xx = load_all_metainfo(METADATA_PATH)
     # mk_index()
     lucifer.loadIndex(INDEX_PATH)
 

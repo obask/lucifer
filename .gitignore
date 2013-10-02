@@ -13,8 +13,9 @@
 *.a
 
 dump.txt
-*.idx
-*.py
+*.bin
+*.pyc
 build/*
-
+__pycache__
+meta.json
 
