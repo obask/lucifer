@@ -11,3 +11,10 @@
 *.lai
 *.la
 *.a
+
+dump.txt
+*.idx
+*.py
+build/*
+
+
