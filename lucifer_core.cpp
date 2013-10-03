@@ -74,8 +74,8 @@ void
 process_text(char *_id, char *text, InvertedIndex &index)
 {
     inv_index.add_document(_id);
-    ofstream dumper("dump.txt");
-    dumper << ">>> " << string(_id) << endl;
+    // ofstream dumper("dump.txt");
+    // dumper << ">>> " << string(_id) << endl;
     char *pch;
     // tokenization
     pch = NULL;
@@ -85,11 +85,11 @@ process_text(char *_id, char *text, InvertedIndex &index)
         tolower_stem_porter(next);
         if (analyser.non_stop(next)) {
             index.add_word(next, 0);
-            dumper << string(next) << " ";
+            // dumper << string(next) << " ";
         }
         next = strtok_r(NULL, TOKENIZE, &pch);
     }
-    dumper << endl;
+    // dumper << endl;
     // cout << endl;
 }
 
@@ -273,8 +273,9 @@ apiAddDocument(char *_id, char *data)
 
 static std::string search_query_res;
 
+
 const char *
-apiSearchQuery(char *data, int f_union, int f_ranking)
+apiSearchQuery(char *data, int num_max, int f_union)
 {
     // cout << "START " << string(data) << ";" << endl;
     forward_list<string> query;
@@ -303,37 +304,45 @@ apiSearchQuery(char *data, int f_union, int f_ranking)
     } else {
         res2 = inv_index.posting_intersect(query);
     }
-    vector<string> document_ids;
-    for (auto num_id : res2) {
-        document_ids.push_back(inv_index.get_document(num_id));
+    vector<double> ranks2 = ranking(res2, inv_index, query);
+
+    // std::vector<int> keys;
+    // std::vector<double> vals;
+    // if (num > res2.size()) {
+    //     num = res2.size();
+    // }
+    // keys.assign(res2.begin(), res2.begin() + num_max);
+    // vals.assign(ranks2.begin(), ranks2.begin() + num_max);
+    // double pivot = *std::min_element(ranks2.begin(), ranks2.begin() + num_max);
+    
+    vector<pair<double,int> > ololo;
+    for (int i = 0; i < res2.size(); ++i) {
+        ololo.push_back(make_pair(-ranks2[i], res2[i])); // for reverse sort
     }
-    vector<double> ranks2;
-    if (f_ranking) {
-        ranks2 = ranking(res2, inv_index, query);
-    } else {
-        ranks2 = vector<double>(res2.size(), 1.0);
-    }
-    assert(document_ids.size() == ranks2.size());
+    std::partial_sort(ololo.begin(), ololo.begin() + num_max, ololo.end());
+    ololo.resize(num_max);
+
+    // vector<string> document_ids;
+    // for (auto num_id : res2) {
+    //     document_ids.push_back(inv_index.get_document(num_id));
+    // }
+
     // make JSON
-    auto doc_id = document_ids.begin();
-    auto rank = ranks2.begin();
-    search_query_res = "{\n";
-    for (; // doc_id = res2.begin(), rank = ranks2.begin();
-         doc_id != document_ids.end() and rank != ranks2.end();
-         ++doc_id, ++rank) {
-        search_query_res += "\"";
-        search_query_res += *doc_id;
-        search_query_res += "\": ";
+    search_query_res = "[\n";
+    for (const auto &doc_p : ololo) {
+        search_query_res += "(\"";
+        search_query_res += inv_index.get_document(doc_p.second);
+        search_query_res += "\", ";
         char buf[20];
-        snprintf(buf, 20, "%lf", *rank);
+        snprintf(buf, 20, "%lf", -doc_p.first);
         search_query_res += buf;
-        search_query_res += ",\n";
+        search_query_res += "),\n";
     }
     // delete last comma
-    if (document_ids.size() != 0)
-        search_query_res[search_query_res.length() - 2] = '}';
+    if (ololo.size() != 0)
+        search_query_res[search_query_res.length() - 2] = ']';
     else
-        search_query_res[search_query_res.length() - 1] = '}';
+        search_query_res[search_query_res.length() - 1] = ']';
     return search_query_res.data();
 }
 

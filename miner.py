@@ -19,6 +19,7 @@ def parse_all_metainfo(posts_path, save_to=""):
     for fp in files:
         if fp.endswith(".html"):
             curr_path = os.path.join(posts_path, fp)
+            print(curr_path)
             with open(curr_path, 'r') as r:
                 xx = list(r.readlines())
                 zz = xx[1:xx.index('---\n', 1)]
@@ -92,12 +93,19 @@ def proc_file(path):
 
 
 def mk_index():
-    if os.path.exists("dump.txt"):
-        os.remove("dump.txt")
-    proc_file("../kalinin/index1.xhtml")
-    proc_file("../kalinin/index2.xhtml")
-    proc_file("../kalinin/index3.xhtml")
-
+    # proc_file("../kalinin/index1.xhtml")
+    # proc_file("../kalinin/index2.xhtml")
+    # proc_file("../kalinin/index3.xhtml")
+    i = 0
+    books_path = "/Users/oleg/design/bookmine/books"
+    for pref,_,files in os.walk(books_path):
+        for fp in files:
+            if fp.endswith(".xhtml"):
+                curr_path = os.path.join(pref, fp)
+                print(curr_path)
+                i+=1
+                proc_file(curr_path)
+    print("i =", i)
     # lucifer.addDocument("OLOLO1", "Goethe saw the sea for the first time in his life when he came   ")
 
     # for x in ss.split():
@@ -107,19 +115,22 @@ def mk_index():
 
 
 def main():
-    zz = parse_all_metainfo(POSTS_PATH, save_to=METADATA_PATH)
+    # zz = parse_all_metainfo(POSTS_PATH, save_to=METADATA_PATH)
     xx = load_all_metainfo(METADATA_PATH)
-    # mk_index()
+    mk_index()
+    return
+
     lucifer.loadIndex(INDEX_PATH)
 
     ss = "Goethe saw the sea for the first time in his life when he"
-    raw_res = lucifer.searchQuery(ss, 1, 1)
-    res = json.loads(raw_res)
-    trunc = sorted(res.items(), key= lambda x: x[1], reverse=True)[:10]
-    pprint(trunc)
-    print("res size =", len(res))
-    print("index size = %d kB" % (os.path.getsize(INDEX_PATH) // 1024))
-    return
+    raw_res = lucifer.searchQuery(ss, 17, 1)
+    print(raw_res)
+    # res = json.loads(raw_res)
+    # trunc = sorted(res.items(), key= lambda x: x[1], reverse=True)[:10]
+    # pprint(trunc)
+    # print("res size =", len(res))
+    # print("index size = %d kB" % (os.path.getsize(INDEX_PATH) // 1024))
+    # return
 
 
 
